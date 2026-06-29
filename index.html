@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Folky Jeans · Analista Mercado Livre</title>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+<style>
+  :root{--ink:#0b0d10;--bg:#faf7f2;--card:#fff;--border:#e4ddcf;--accent:#a8862e;--ml:#ffe600;--ml-text:#8a7400;--emerald:#2f6f4f;--muted:#7a7a7a}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55}
+  header{background:#0a1428;color:#fff;padding:28px 0}
+  .wrap{max-width:820px;margin:0 auto;padding:0 20px}
+  h1{font-size:24px;font-weight:700}
+  h1 .b{color:var(--ml)}
+  .sub{color:#9fb0c9;font-size:14px;margin-top:6px}
+  main{padding:28px 0 60px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;box-shadow:0 1px 2px rgba(0,0,0,.04);margin-bottom:18px}
+  .btn{display:inline-block;background:var(--ml);color:var(--ml-text);font-weight:700;padding:11px 20px;border-radius:10px;text-decoration:none;border:none;cursor:pointer;font-size:14px}
+  .btn.alt{background:#0a1428;color:#fff}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+  .meta{font-size:13px;color:var(--muted)}
+  .plan h2{font-size:18px;margin:18px 0 8px;color:var(--accent)}
+  .plan h3{font-size:15px;margin:14px 0 6px}
+  .plan ul,.plan ol{margin:6px 0 6px 22px}
+  .plan li{margin:4px 0}
+  .plan p{margin:8px 0}
+  .pill{font-size:12px;padding:4px 10px;border-radius:20px;background:#eee;color:#444}
+  .pill.ok{background:rgba(47,111,79,.12);color:var(--emerald)}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Folky <span class="b">Jeans</span> · Analista Mercado Livre</h1>
+  <div class="sub">Plano de ação diário gerado por IA a partir da conta real da Folky.</div>
+</div></header>
+<main class="wrap">
+  <div id="app"><div class="card">Carregando…</div></div>
+</main>
+<script>
+const app=document.getElementById('app');
+function card(html){return `<div class="card">${html}</div>`;}
+
+async function init(){
+  let st;
+  try{ st=await (await fetch('/api/status')).json(); }
+  catch(e){ app.innerHTML=card('Backend indisponível. Rode com <code>vercel dev</code> ou faça o deploy.'); return; }
+
+  if(!st.connected){
+    app.innerHTML=card(`<h2 style="font-size:18px;margin-bottom:8px">🔌 Conectar a conta da Folky</h2>
+      <p class="meta" style="margin-bottom:14px">Conecte a conta do Mercado Livre para o analista começar a trabalhar.</p>
+      <a class="btn" href="/api/auth/login">Conectar Mercado Livre →</a>`);
+    return;
+  }
+  render();
+}
+
+async function render(){
+  app.innerHTML=`<div class="row">
+      <button class="btn alt" id="run">▶ Rodar análise agora</button>
+      <a class="btn" href="/api/snapshot" target="_blank">Ver dados brutos</a>
+      <span class="pill ok">conta conectada</span>
+    </div><div id="out"><div class="card">Buscando o último plano…</div></div>`;
+  document.getElementById('run').onclick=runNow;
+  loadLatest();
+}
+
+async function loadLatest(){
+  const out=document.getElementById('out');
+  const r=await fetch('/api/analyze');
+  if(r.status===404){ out.innerHTML=card('Nenhuma análise ainda. Clique em <b>Rodar análise agora</b>.'); return; }
+  showReport(await r.json());
+}
+
+async function runNow(){
+  const out=document.getElementById('out');
+  out.innerHTML=card('🧠 Analisando a conta (coleta + IA)… isso leva alguns segundos.');
+  const r=await fetch('/api/analyze?days=30',{method:'POST'});
+  if(!r.ok){ out.innerHTML=card('Erro: '+JSON.stringify(await r.json())); return; }
+  showReport(await r.json());
+}
+
+function showReport(rep){
+  const out=document.getElementById('out');
+  const s=rep.snapshot_summary||{};
+  out.innerHTML=card(
+    `<div class="meta" style="margin-bottom:6px">Gerado em ${new Date(rep.generated_at).toLocaleString('pt-BR')} ·
+       reputação ${s.reputation||'—'} · ${s.orders??'—'} vendas · R$ ${(s.revenue||0).toLocaleString('pt-BR')} · ${s.active_items??'—'} anúncios</div>
+     <div class="plan">${marked.parse(rep.plan_markdown||'(sem conteúdo)')}</div>`);
+}
+init();
+</script>
+</body>
+</html>

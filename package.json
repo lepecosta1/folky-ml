@@ -1,0 +1,14 @@
+{
+  "name": "folky-ml",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Integracao + analista automatico da conta da Folky Jeans no Mercado Livre",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.0",
+    "@upstash/redis": "^1.34.3"
+  }
+}
